@@ -154,7 +154,6 @@ void execute(proc_stats_t* p_stats, const cycle_half_t &half) {
 			instr->executed = false;
 			for (size_t i = 0; i < cdb.size(); ++i) {
 				if (cdb[i].free) {
-					std::cout<<iter->first<<std::endl;
 					// occupy CDB
 					cdb[i].free = false;
 					cdb[i].tag = instr->id;
