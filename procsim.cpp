@@ -11,6 +11,7 @@ size_t scheduling_queue_limit;
 std::unordered_map<uint32_t, register_info_t> register_file;
 
 std::vector<proc_cdb_t> cdb;
+std::map<uint32_t, proc_inst_ptr_t> finished_executions;
 std::unordered_map<uint32_t, uint32_t> fu_cnt;
 
 /**
@@ -109,7 +110,6 @@ void state_update(proc_stats_t* p_stats, const cycle_half_t &half) {
 			if (instr->executed && !instr->cycle_status_update) {
 				instr->cycle_status_update = p_stats->cycle_count;
 			}
-
 		}
 
 		// release CDB
@@ -143,26 +143,34 @@ void execute(proc_stats_t* p_stats, const cycle_half_t &half) {
 		for (unsigned i = 0; i < scheduling_queue.size(); i++) {
 			auto instr = scheduling_queue[i];
 			if (instr->fired == true && !instr->cycle_execute) {
-				// TODO
-				// try to get a free CDB
-				// should be in order
-				instr->executed = false;
-				for (size_t i = 0; i < cdb.size(); ++i) {
-					if (cdb[i].free) {
-						// occupy CDB
-						cdb[i].free = false;
-						cdb[i].tag = instr->id;
-						cdb[i].reg = instr->dest_reg;
-						// write REG file
-						register_file[instr->dest_reg].ready = READY;
-						register_file[instr->dest_reg].tag = instr->id;
-						// mark as executed;
-						instr->executed = true;
-						instr->cycle_execute = p_stats->cycle_count;
-						// release FU
-						fu_cnt[instr->op_code]++;
-						break;
-					}
+				finished_executions.insert(std::make_pair(instr->id, instr));
+			}
+		}
+		for (auto iter = finished_executions.begin();
+				iter != finished_executions.end(); ++iter) {
+			auto instr = iter->second;
+
+			// try to get a free CDB, should be in tag oder
+			instr->executed = false;
+			for (size_t i = 0; i < cdb.size(); ++i) {
+				if (cdb[i].free) {
+					std::cout<<iter->first<<std::endl;
+					// occupy CDB
+					cdb[i].free = false;
+					cdb[i].tag = instr->id;
+					cdb[i].reg = instr->dest_reg;
+					// write REG file
+					register_file[instr->dest_reg].ready = READY;
+					register_file[instr->dest_reg].tag = instr->id;
+					// mark as executed;
+					instr->executed = true;
+					instr->cycle_execute = p_stats->cycle_count;
+					// release FU
+					fu_cnt[instr->op_code]++;
+
+					// remove from the list
+					finished_executions.erase(instr->id);
+					break;
 				}
 			}
 		}
@@ -196,7 +204,7 @@ void schedule(proc_stats_t* p_stats, const cycle_half_t &half) {
 		for (unsigned i = 0; i < scheduling_queue.size(); i++) {
 			auto instr = scheduling_queue[i];
 			if (instr->fire && !instr->fired) {
-				// Check if available FU
+				// check if available FU
 				if (fu_cnt[instr->op_code]) {
 					// occupy a FU
 					fu_cnt[instr->op_code]--;

@@ -7,7 +7,7 @@
 #define DEFAULT_R 8
 #define DEFAULT_F 4
 
-#define EMPTY -1
+#define EMPTY -1 // Empty register
 #define READY true
 #define NOT_READY false
 
@@ -21,6 +21,7 @@
 #include <utility>
 #include <unordered_map>
 #include <unordered_set>
+#include <map>
 
 typedef enum Op_Type_Enum{
     OP_ALU,             // ALU(ADD/ SUB/ MUL/ DIV) operaiton
