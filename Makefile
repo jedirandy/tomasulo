@@ -8,6 +8,7 @@ J=1
 K=2
 L=3
 F=4
+all: build
 
 build:
 	$(CXX) $(CXXFLAGS) $(SRC) -o procsim

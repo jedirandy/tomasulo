@@ -7,7 +7,9 @@
 #define DEFAULT_R 8
 #define DEFAULT_F 4
 
-#define EMPTY
+#define EMPTY -1
+#define READY true
+#define NOT_READY false
 
 #include <cstdint>
 #include <cstdio>
