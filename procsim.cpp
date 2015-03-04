@@ -111,6 +111,7 @@ void state_update(proc_stats_t* p_stats, const cycle_half_t &half) {
 			}
 
 		}
+
 		// release CDB
 		for (size_t i = 0; i < cdb.size(); ++i) {
 			cdb[i].free = true;
@@ -142,8 +143,9 @@ void execute(proc_stats_t* p_stats, const cycle_half_t &half) {
 		for (unsigned i = 0; i < scheduling_queue.size(); i++) {
 			auto instr = scheduling_queue[i];
 			if (instr->fired == true && !instr->cycle_execute) {
-
-// try to get a free CDB
+				// TODO
+				// try to get a free CDB
+				// should be in order
 				instr->executed = false;
 				for (size_t i = 0; i < cdb.size(); ++i) {
 					if (cdb[i].free) {
@@ -199,6 +201,10 @@ void schedule(proc_stats_t* p_stats, const cycle_half_t &half) {
 					// occupy a FU
 					fu_cnt[instr->op_code]--;
 					instr->fired = true;
+
+					// occupy a register file
+					register_file[instr->dest_reg].ready = false;
+					register_file[instr->dest_reg].tag = instr->id;
 				}
 			}
 
@@ -231,8 +237,11 @@ void dispatch(proc_stats_t* p_stats, const cycle_half_t &half) {
 				- scheduling_queue.size();
 		for (unsigned i = 0; i < dispatching_queue.size(); i++) {
 			auto instr = dispatching_queue[i];
-			if (available_slots-- > 0) {
+			if (available_slots > 0) {
 				instr->reserved = true;
+				available_slots--;
+			} else {
+				break;
 			}
 		}
 	} else {
